@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk Image Extractor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #000906;
+            background-image: radial-gradient(85% 85% at 50% 50%, hsla(185, 100%, 25%, 0.25) 0%, hsla(185, 100%, 25%, 0.12) 50%, hsla(185, 100%, 25%, 0) 100%);
+            z-index: -1;
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background-image: repeating-linear-gradient(0deg,
+                    rgba(0, 255, 0, 0.1) 0px,
+                    rgba(0, 255, 0, 0.1) 1px,
+                    rgba(0, 255, 0, 0.1) 0px,
+                    rgba(0, 255, 0, 0.1) 1px);
+            background-size: 30px 30px;
+            animation: move 2s infinite linear;
+        }
+
+        .moving-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background-image: linear-gradient(0deg, hsla(180, 100%, 25%, 0.05), transparent 30%);
+            background-size: 30px 30px;
+            animation: moveLines 1.5s infinite linear;
+        }
+
+
+        @keyframes move {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(10px, 10px);
+            }
+        }
+
+        @keyframes moveLines {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(15px, 15px);
+            }
+        }
+
+        .dots {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2220%22 height=%2220%22%3E%3Ccircle cx=%2210%22 cy=%2210%22 r=%221%22 fill=%22hsla(180, 100%, 75%, 0.05)%22/%3E%3C/svg%3E') repeat;
+            background-size: 30px 30px;
+            animation: moveDots 3s infinite linear;
+        }
+
+        @keyframes moveDots {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(-5px, -5px);
+            }
+        }
+
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h2 {
+            font-size: 2rem;
+            text-shadow: 0 0 8px #00ff00;
+        }
+
+        input[type="file"] {
+            background-color: #002b00;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #004d00;
+            border: none;
+            padding: 12px 24px;
+            color: #00ff00;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-shadow: 0 0 4px #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            transition: background 1.3s;
+        }
+
+        button:hover {
+            background-color: #006b00;
+        }
+
+        #downloadLink {
+            color: #00ff00;
+            text-decoration: none;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            display: inline-block;
+            text-shadow: 0 0 4px #00ff00;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background">
+        <div class="grid-lines"></div>
+        <div class="moving-lines"></div>
+        <div class="dots"></div>
+    </div>
+
+    <h2>Cyberpunk Image Name Extractor</h2>
+    <input type="file" id="zipFile" accept=".zip"><br>
+    <button onclick="processZip()">Extract Image Names</button>
+    <a id="downloadLink" style="display:none;">Download CSV</a>
+
+    <script>
+        function processZip() {
+            const fileInput = document.getElementById('zipFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please upload a ZIP file');
+                return;
+            }
+
+            const jszip = new JSZip();
+            jszip.loadAsync(file).then(zip => {
+                let imageNames = [];
+                zip.forEach((relativePath, file) => {
+                    if (/\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file.name)) {
+                        imageNames.push(file.name);
+                    }
+                });
+
+                const csvContent = 'Image Name\n' + imageNames.join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = URL.createObjectURL(blob);
+                downloadLink.download = 'image_names.csv';
+                downloadLink.style.display = 'block';
+                downloadLink.textContent = 'Download CSV';
+            }).catch(err => {
+                console.error('Error reading the ZIP file:', err);
+                alert('An error occurred while processing the ZIP file');
+            });
+        }
+    </script>
+</body>
+
+</html>
